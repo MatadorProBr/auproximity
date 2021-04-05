@@ -8,7 +8,7 @@ I have an open instance hosted at https://auproxybrasil.herokuapp.com.
 
 This software should be used for personal use on public lobbies. Anyone that wants to
 have a custom solution, private server, or other commercial use for this software should 
-send a direct message to `weakeyes#0001` on Discord.
+send a direct message to `edward#8008` on Discord.
 
 ## Features
 - The software can connect to a public game to host proximity voice services
@@ -37,10 +37,6 @@ Follow the steps below to run a server and webui with hot-reload
 ## Selfhosting - Heroku
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
-## Selfhosting - Replit
-
-[![Run on Repl.it][replit-shield]][replit-url] 
-
 ## Architecture
 This repository contains two different modules, the server and the webui.
  - The webui contains a basic implementation of a proximity voice client.
@@ -68,6 +64,3 @@ The [skeldjs](https://github.com/edqx/skeldjs/SkeldJS) library by
 
 ## License
 This software is licensed under the GNU GPLv3 License, and comes with no warranty.
-
-[replit-shield]: https://repl.it/badge/github/MatadorProBr/auproximity
-[replit-url]: https://repl.it/github/MatadorProBr/auproximity
