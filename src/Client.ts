@@ -1,7 +1,6 @@
 import { Socket } from "socket.io";
 
 import { ColorID } from "@skeldjs/constant";
-import { Vector2 } from "@skeldjs/util";
 
 import {
     BackendModel,
@@ -18,19 +17,20 @@ import {
 } from "./types/models/ClientOptions";
 
 import { ClientSocketEvents } from "./types/enums/ClientSocketEvents";
+import { RoomGroup } from "./types/enums/RoomGroup";
 
 import { ClientBase } from "./types/ClientBase";
 import Room from "./Room";
 import { state } from "./main";
-import { PlayerFlag } from "./types/enums/PlayerFlags";
-import { GameFlag } from "./types/enums/GameFlags";
-import { GameState } from "./types/enums/GameState";
+import { PlayerFlags } from "./types/enums/PlayerFlags";
+
+export interface Pose {
+    x: number;
+    y: number;
+}
 
 export interface PlayerModel {
-    name: string;
-    position: Vector2;
     color: ColorID;
-    flags: number;
 }
 
 export default class Client implements ClientBase {
@@ -40,16 +40,24 @@ export default class Client implements ClientBase {
     public readonly uuid: string;
 
     public name: string;
+    public group: RoomGroup;
+    public pose: Pose;
+    public color: ColorID;
+    public flags: PlayerFlags;
 
     constructor(socket: Socket, uuid: string) {
         this.socket = socket;
         this.uuid = uuid;
+        this.pose = { x: 0, y: 0 };
+        this.group = RoomGroup.Spectator;
         this.name = "";
+        this.color = -1;
+        this.flags = PlayerFlags.None;
 
         // Initialize socket events
         this.socket.on(ClientSocketEvents.RemoveClient, async (payload: { uuid: string, ban: boolean }) => {
-            if (this.room && this.room.clients && this.name === this.room.hostname) {
-                const client = this.room.clients.find(member => member.uuid === payload.uuid);
+            if (this.room && this.room.members && this.name === this.room.hostname) {
+                const client = this.room.members.find(member => member.uuid === payload.uuid);
                 if (client) {
                     await this.room.removeClient(client, payload.ban);
                 }
@@ -122,15 +130,16 @@ export default class Client implements ClientBase {
         this.socket.emit(ClientSocketEvents.Error, { err, fatal });
     }
 
-    syncAllClients(array: ClientBase[]): void {
-        this.socket.emit(ClientSocketEvents.SyncAllClients, array);
+    setAllClients(array: ClientBase[]): void {
+        this.socket.emit(ClientSocketEvents.SetAllClients, array);
     }
 
-    addClient(uuid: string, name: string, position: Vector2, color: ColorID): void {
+    addClient(uuid: string, name: string, pose: Pose, group: RoomGroup, color: ColorID): void {
         this.socket.emit(ClientSocketEvents.AddClient, {
             uuid,
             name,
-            position,
+            pose,
+            group,
             color
         });
     }
@@ -139,35 +148,41 @@ export default class Client implements ClientBase {
         this.socket.emit(ClientSocketEvents.RemoveClient, { uuid, ban });
     }
 
-    setPositionOf(uuid: string, position: Vector2): void {
-        this.socket.emit(ClientSocketEvents.SetPositionOf, { uuid, position });
+    setPoseOf(uuid: string, pose: Pose): void {
+        if (uuid === this.uuid) {
+            this.pose = pose;
+        }
+        this.socket.emit(ClientSocketEvents.SetPose, { uuid, pose });
+    }
+
+    setGroupOf(uuid: string, group: RoomGroup): void {
+        if (uuid === this.uuid) {
+            this.group = group;
+        }
+        this.socket.emit(ClientSocketEvents.SetGroup, { uuid, group });
     }
 
     setColorOf(uuid: string, color: ColorID): void {
         this.socket.emit(ClientSocketEvents.SetColorOf, { uuid, color });
     }
 
-    setHost(uuid: string): void {
-        this.socket.emit(ClientSocketEvents.SetHost, { uuid });
+    setHost(hostname: string): void {
+        this.socket.emit(ClientSocketEvents.SetHost, { hostname });
     }
 
-    setOptions(options: HostOptions): void {
+    sendOptions(options: HostOptions): void {
         this.socket.emit(ClientSocketEvents.SetOptions, { options });
     }
 
-    setSettings(settings: GameSettings): void {
+    sendSettings(settings: GameSettings): void {
         this.socket.emit(ClientSocketEvents.SetSettings, { settings });
     }
 
-    setGameState(state: GameState): void {
-        this.socket.emit(ClientSocketEvents.SetGameState, { state });
-    }
-
-    setGameFlags(flags: GameFlag): void{ 
-        this.socket.emit(ClientSocketEvents.SetGameFlags, { flags });
-    }
-
-    setFlagsOf(uuid: string, flags: PlayerFlag): void {
+    setFlagsOf(uuid: string, flags: PlayerFlags): void {
         this.socket.emit(ClientSocketEvents.SetFlagsOf, { uuid, flags });
+    }
+
+    unsetFlagsOf(uuid: string, flags: PlayerFlags): void {
+        this.socket.emit(ClientSocketEvents.UnsetFlagsOf, { uuid, flags });
     }
 }

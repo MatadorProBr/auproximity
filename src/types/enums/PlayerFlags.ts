@@ -1,7 +1,4 @@
-export enum PlayerFlag {
+export enum PlayerFlags {
     None = 0,
-    IsImpostor = 1,
-    IsDead = 2,
-    OnCams = 4,
-    InVent = 8
+    PA = 1
 }

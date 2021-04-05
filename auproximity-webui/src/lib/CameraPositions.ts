@@ -1,5 +1,4 @@
 import { MapID } from '@skeldjs/constant'
-import { Vector2 } from '@skeldjs/util'
 
 export const CameraPositions = {
   [MapID.TheSkeld]: [
@@ -46,7 +45,7 @@ export const CameraPositions = {
   [MapID.Airship]: []
 }
 
-export function getClosestCamera (position: Vector2, map: MapID) {
+export function getClosestCamera (position: { x: number; y: number}, map: MapID) {
   const cameras = CameraPositions[map]
 
   if (cameras.length) {

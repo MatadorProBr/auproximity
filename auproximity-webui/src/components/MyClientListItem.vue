@@ -10,15 +10,15 @@
             <i v-if="mic.levels > 10" class="fas fa-volume-up"></i>
             <i v-else class="fas fa-volume-off"></i>
             <span class="pl-3">{{ client.name }}</span>
-            <span v-if="$store.state.host === client.uuid">
+            <span v-if="$store.state.host === client.name">
               (HOST)
             </span>
           </span>
           <span class="float-right" v-if="mic.volumeNode !== undefined">
-            <span class="px-3">Connected</span>
+            <span class="px-3">Conectado</span>
           </span>
           <span class="float-right" v-else>
-            <span class="px-3">Disconnected</span>
+            <span class="px-3">Desconectado</span>
           </span>
         </v-list-item-title>
       </v-list-item-content>
@@ -46,7 +46,7 @@
 
 <script lang="ts">
 import { Component, Vue, Prop } from 'vue-property-decorator'
-import { ClientModel, MyMicModel, ColorID } from '@/models/ClientModel'
+import ClientModel, { MyMicModel, ColorID } from '@/models/ClientModel'
 
 @Component({})
 export default class MyClientListItem extends Vue {

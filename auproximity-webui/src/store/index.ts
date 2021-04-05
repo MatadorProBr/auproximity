@@ -1,12 +1,11 @@
-import { Vector2 } from '@skeldjs/util'
-import Vue from 'vue'
-import Vuex from 'vuex'
-
-import { BackendModel, BackendType } from '@/models/BackendModel'
-import { ClientModel, ColorID, MyMicModel, PlayerFlag } from '@/models/ClientModel'
+import { BackendModel, BackendType, RoomGroup } from '@/models/BackendModel'
+import ClientModel, { ColorID, MyMicModel, Pose } from '@/models/ClientModel'
 
 import { ClientSocketEvents } from '@/models/ClientSocketEvents'
-import { HostOptions, ClientOptions, GameState, GameFlag } from '@/models/RoomModel'
+import { PlayerFlags } from '@/models/PlayerFlags'
+import { HostOptions, ClientOptions } from '@/models/RoomModel'
+import Vue from 'vue'
+import Vuex from 'vuex'
 
 Vue.config.devtools = true
 Vue.use(Vuex)
@@ -28,12 +27,13 @@ const state: State = {
   me: {
     uuid: '',
     name: '',
-    position: {
+    pose: {
       x: 0,
       y: 0
     },
+    group: RoomGroup.Spectator,
     color: -1,
-    flags: PlayerFlag.None
+    flags: PlayerFlags.None
   },
   clients: [],
   options: {
@@ -45,8 +45,6 @@ const state: State = {
   clientOptions: {
     omniscientGhosts: false
   },
-  gameState: GameState.Lobby,
-  gameFlags: GameFlag.None,
   host: ''
 }
 export default new Vuex.Store({
@@ -64,14 +62,14 @@ export default new Vuex.Store({
     removeClient (state: State, uuid: string) {
       state.clients = state.clients.filter(c => c.uuid !== uuid)
     },
-    setPosition (state: State, payload: Vector2) {
-      state.me.position = payload
+    setPose (state: State, payload: Pose) {
+      state.me.pose = payload
     },
-    setPositionOf (state: State, payload: { uuid: string; position: Vector2 }) {
+    setPoseOf (state: State, payload: { uuid: string; pose: Pose }) {
       const index = state.clients.findIndex(c => c.uuid === payload.uuid)
 
       if (index !== -1) {
-        state.clients[index].position = payload.position
+        state.clients[index].pose = payload.pose
       }
     },
     setColor (state: State, color: ColorID) {
@@ -84,14 +82,33 @@ export default new Vuex.Store({
         state.clients[index].color = payload.color
       }
     },
-    setFlags (state: State, flags: PlayerFlag) {
-      state.me.flags = flags
+    setFlags (state: State, flags: PlayerFlags) {
+      state.me.flags |= flags
     },
-    setFlagsOf (state: State, payload: { uuid: string; flags: PlayerFlag }) {
+    setFlagsOf (state: State, payload: { uuid: string; flags: PlayerFlags }) {
       const index = state.clients.findIndex(c => c.uuid === payload.uuid)
 
       if (index !== -1) {
-        state.clients[index].flags = payload.flags
+        state.clients[index].flags |= payload.flags
+      }
+    },
+    unsetFlags (state: State, flags: PlayerFlags) {
+      state.me.flags &= ~flags
+    },
+    unsetFlagsOf (state: State, payload: { uuid: string; flags: PlayerFlags }) {
+      const index = state.clients.findIndex(c => c.uuid === payload.uuid)
+
+      if (index !== -1) {
+        state.clients[index].flags &= ~payload.flags
+      }
+    },
+    setGroup (state: State, payload: RoomGroup) {
+      state.me.group = payload
+    },
+    setGroupOf (state: State, payload: { uuid: string; group: RoomGroup }) {
+      const index = state.clients.findIndex(c => c.uuid === payload.uuid)
+      if (index !== -1) {
+        state.clients[index].group = payload.group
       }
     },
     setJoinedRoom (state: State, payload: boolean) {
@@ -101,17 +118,11 @@ export default new Vuex.Store({
       state.me.name = payload.name
       state.backendModel = payload.backendModel
     },
-    setHost (state: State, payload: { uuid: string }) {
-      state.host = payload.uuid
+    setHost (state: State, payload: { hostname: string }) {
+      state.host = payload.hostname
     },
     setOptions (state: State, payload: { options: HostOptions }) {
       state.options = payload.options
-    },
-    setGameState (state: State, payload: { state: GameState }) {
-      state.gameState = payload.state
-    },
-    setGameFlags (state: State, payload: { flags: number }) {
-      state.gameFlags = payload.flags
     }
   },
   actions: {
@@ -139,17 +150,19 @@ export default new Vuex.Store({
       const client: ClientModel = {
         uuid: payload.uuid,
         name: payload.name,
-        position: payload.position,
+        pose: payload.pose,
+        group: payload.group,
         color: payload.color,
         flags: payload.flags
       }
       commit('addClient', client)
     },
-    [`socket_${ClientSocketEvents.SyncAllClients}`] ({ commit }, payload: ClientModel[]) {
+    [`socket_${ClientSocketEvents.SetAllClients}`] ({ commit }, payload: ClientModel[]) {
       const clients: ClientModel[] = payload.map(c => ({
         uuid: c.uuid,
         name: c.name,
-        position: c.position,
+        pose: c.pose,
+        group: c.group,
         color: c.color,
         flags: c.flags
       }))
@@ -158,11 +171,11 @@ export default new Vuex.Store({
     [`socket_${ClientSocketEvents.RemoveClient}`] ({ commit }, uuid: string) {
       commit('removeClient', uuid)
     },
-    [`socket_${ClientSocketEvents.SetPositionOf}`] ({ commit, state }, payload: { uuid: string; position: Vector2 }) {
+    [`socket_${ClientSocketEvents.SetPose}`] ({ commit, state }, payload: { uuid: string; pose: Pose }) {
       if (payload.uuid === state.me.uuid) {
-        commit('setPosition', payload.position)
+        commit('setPose', payload.pose)
       } else {
-        commit('setPositionOf', { uuid: payload.uuid, position: payload.position })
+        commit('setPoseOf', { uuid: payload.uuid, pose: payload.pose })
       }
     },
     [`socket_${ClientSocketEvents.SetColorOf}`] ({ commit, state }, payload: { uuid: string; color: ColorID }) {
@@ -172,23 +185,28 @@ export default new Vuex.Store({
         commit('setColorOf', { uuid: payload.uuid, color: payload.color })
       }
     },
-    [`socket_${ClientSocketEvents.SetHost}`] ({ commit }, payload: { uuid: string }) {
-      commit('setHost', { uuid: payload.uuid })
+    [`socket_${ClientSocketEvents.SetGroup}`] ({ commit, state }, payload: { uuid: string; group: RoomGroup }) {
+      if (payload.uuid === state.me.uuid) {
+        commit('setGroup', payload.group)
+      } else {
+        commit('setGroupOf', { uuid: payload.uuid, group: payload.group })
+      }
     },
-    [`socket_${ClientSocketEvents.SetOptions}`] ({ commit }, payload: { options: HostOptions }) {
-      commit('setOptions', { options: payload.options })
+    [`socket_${ClientSocketEvents.SetHost}`] ({ commit }, payload: { hostname: string }) {
+      commit('setHost', { hostname: payload.hostname })
     },
-    [`socket_${ClientSocketEvents.SetGameState}`] ({ commit }, payload: { state: GameState }) {
-      commit('setGameState', { state: payload.state })
-    },
-    [`socket_${ClientSocketEvents.SetGameFlags}`] ({ commit }, payload: { flags: number }) {
-      commit('setGameFlags', { flags: payload.flags })
-    },
-    [`socket_${ClientSocketEvents.SetFlagsOf}`] ({ commit, state }, payload: { uuid: string; flags: PlayerFlag }) {
+    [`socket_${ClientSocketEvents.SetFlagsOf}`] ({ commit, state }, payload: { uuid: string; flags: PlayerFlags }) {
       if (payload.uuid === state.me.uuid) {
         commit('setFlags', payload.flags)
       } else {
         commit('setFlagsOf', { uuid: payload.uuid, flags: payload.flags })
+      }
+    },
+    [`socket_${ClientSocketEvents.UnsetFlagsOf}`] ({ commit, state }, payload: { uuid: string; flags: PlayerFlags }) {
+      if (payload.uuid === state.me.uuid) {
+        commit('unsetFlags', payload.flags)
+      } else {
+        commit('unsetFlagsOf', { uuid: payload.uuid, flags: payload.flags })
       }
     }
   },
@@ -209,7 +227,5 @@ export interface State {
   clients: ClientModel[];
   options: HostOptions;
   clientOptions: ClientOptions;
-  gameState: GameState;
-  gameFlags: number;
   host: string;
 }

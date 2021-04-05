@@ -1,18 +1,18 @@
 <template>
   <div>
     <v-card class="pa-5">
-      <h3>Host options</h3>
+      <h3>Opções do Host</h3>
       <br>
       <v-form>
         <v-slider
-          label="Voice dropoff"
+          label="Distância da Voz"
           min="2.5"
           max="10"
           step="0.1"
           v-bind="attrs"
           v-on="on"
           v-model="$store.state.options.falloff"
-          :readonly="$store.state.host !== $store.state.me.uuid"
+          :readonly="$store.state.host !== $store.state.me.name"
           :disabled="$store.state.options.falloffVision || !$store.state.joinedRoom"
           @change="updateOptions"
         >
@@ -25,30 +25,30 @@
               min="2.5"
               max="10"
               step="0.1"
-              :readonly="$store.state.host !== $store.state.me.uuid"
+              :readonly="$store.state.host !== $store.state.me.name"
               :disabled="$store.state.options.falloffVision || !$store.state.joinedRoom"
               @change="updateOptions"
             ></v-text-field>
           </template>
         </v-slider>
         <v-checkbox
-          label="Only hear people in vision"
+          label="Ouvir pessoas apenas na sua visão"
           v-model="$store.state.options.falloffVision"
-          :readonly="$store.state.host !== $store.state.me.uuid"
+          :readonly="$store.state.host !== $store.state.me.name"
           :disabled="!$store.state.joinedRoom"
           @change="updateOptions"
         ></v-checkbox>
         <v-checkbox
-          label="Walls block voice"
+          label="Paredes bloqueam a voz"
           v-model="$store.state.options.colliders"
-          :readonly="$store.state.host !== $store.state.me.uuid"
+          :readonly="$store.state.host !== $store.state.me.name"
           :disabled="!$store.state.joinedRoom"
           @change="updateOptions"
         ></v-checkbox>
         <v-checkbox
-          label="Hear through cameras"
+          label="Ouvir pessoas nas câmeras"
           v-model="$store.state.options.paSystems"
-          :readonly="$store.state.host !== $store.state.me.uuid"
+          :readonly="$store.state.host !== $store.state.me.name"
           :disabled="!$store.state.joinedRoom"
           @change="updateOptions"
         ></v-checkbox>
@@ -56,10 +56,10 @@
     </v-card>
     <br>
     <v-card class="pa-5">
-      <h3>Local options</h3>
+      <h3>Opções Locais</h3>
       <v-form>
         <v-checkbox
-          label="Hear everyone as a ghost"
+          label="Ouvir todos como fantasma"
           v-model="$store.state.clientOptions.omniscientGhosts"
           :disabled="!$store.state.joinedRoom"
         ></v-checkbox>

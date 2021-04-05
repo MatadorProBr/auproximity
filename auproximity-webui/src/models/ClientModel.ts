@@ -1,19 +1,18 @@
-import { Vector2 } from '@skeldjs/util'
+import { RoomGroup } from './BackendModel'
+import { PlayerFlags } from './PlayerFlags'
 
-export enum PlayerFlag {
-  None = 0,
-  IsImpostor = 1,
-  IsDead = 2,
-  OnCams = 4,
-  InVent = 8
-}
-
-export interface ClientModel {
+export default interface ClientModel {
   uuid: string;
   name: string;
-  position: Vector2;
+  pose: Pose;
+  group: RoomGroup;
   color: ColorID;
-  flags: PlayerFlag;
+  flags: PlayerFlags;
+}
+
+export interface Pose {
+  x: number;
+  y: number;
 }
 
 export interface RemoteStreamModel {

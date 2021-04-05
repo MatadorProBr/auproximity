@@ -3,15 +3,15 @@ export enum ClientSocketEvents {
     JoinRoom = "joinroom",
     Disconnect = "disconnect",
     Error = "error",
-    SyncAllClients = "syncallclients",
+    SetAllClients = "setallclients",
     AddClient = "addclient",
     RemoveClient = "removeclient",
-    SetPositionOf = "setpositionof",
+    SetPose = "setpose",
+    SetGroup = "setgroup",
     SetColorOf = "setcolorof",
     SetHost = "sethost",
     SetOptions = "setoptions",
     SetSettings = "setsettings",
-    SetGameState = "setgamestate",
-    SetGameFlags = "setgameflags",
-    SetFlagsOf = "setflagsof"
+    SetFlagsOf = "setflagsof",
+    UnsetFlagsOf = "unsetflagsof"
 }

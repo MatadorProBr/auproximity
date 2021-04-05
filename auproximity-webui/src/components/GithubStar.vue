@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <div class="text-center py-5">
-      <h3>Star on Github</h3>
+      <h3>De uma Star no GitHub</h3>
     </div>
     <div class="pa-2 text-center">
       <a class="githubbutton" :href="githubLink" target="_blank">

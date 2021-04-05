@@ -9,9 +9,9 @@
      </ul>
    </div>
    <div class="pa-3 text-center">
-     <p>Note: This software is meant to be used for Official Server Among Us Lobbies.
-       If you want to have a solution like a custom server plugin or BepInEx client mod, direct message
-       <span class="highlight">Cybershard#0001</span> on Discord.
+     <p>Nota: Este software deve ser usado para servidores oficiais do Among Us.
+       Se você deseja ter uma solução como um plugin de servidor personalizado ou um mod cliente BepInEx, envie uma mensagem para
+       <span class="highlight">Cybershard#0001</span> no Discord.
      </p>
    </div>
  </v-card>
@@ -23,12 +23,13 @@ import { Component, Vue } from 'vue-property-decorator'
 @Component({})
 export default class Tutorial extends Vue {
   items = [
-    'Enter your name and game code exactly as it appears in Among Us',
-    'Choose the backend. This will be "Official Among Us Servers"',
-    'Enter the region that you are playing in.',
-    'Press the "Join" button, and share the URL with your friends to invite them.',
-    'Remember to allow your microphone, and get everyone to join the proximity before the game starts.',
-    'If it doesn\'t work for you on the first try, refresh the page and/or try a different browser like Firefox or Chrome.'
+    'Digite seu nome e código da partida exatamente como aparece no Among Us.',
+    'Escolha o backend. Selecione o "Servidores oficiais do Among Us".',
+    'Escolha a região em que você está jogando.',
+    'Pressione o botão "Entrar" e compartilhe a URL com seus amigos para convidá-los.',
+    'Lembre-se de permitir o microfone e fazer com que todos se juntem à proximidade antes do jogo começar.',
+    'Se não funcionar para você na primeira tentativa, atualize a página ou tente um navegador diferente, como Firefox ou Chrome.',
+    'Se você ainda estiver em dúvida de como usar o chat de proximidade por voz, veja esse vídeo: https://youtu.be/lh2RHEJ3o64'
   ]
 }
 </script>

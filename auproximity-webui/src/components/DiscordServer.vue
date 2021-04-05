@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <div class="text-center py-5">
-      <h3>Join Discord Server</h3>
+      <h3>Entre no servidor do Discord (somente em Inglês)</h3>
     </div>
     <div class="pa-4 text-center">
       <a class="discordbutton" :href="discordLink" target="_blank">

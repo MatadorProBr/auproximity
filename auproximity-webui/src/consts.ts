@@ -26,7 +26,7 @@ const consts: {
     }
   },
   DISCORD_INVITE_URL: 'https://discord.gg/gvQzM4GYbv',
-  GITHUB_URL: 'https://github.com/edqx/auproximity'
+  GITHUB_URL: 'https://github.com/cybershard/auproximity'
 }
 
 if (window.location.hostname === 'localhost') {

@@ -4,13 +4,13 @@
       <v-form v-model="valid" @submit.prevent="joinRoom(name)">
         <v-text-field
           v-model="name"
-          label="Name"
+          label="Nome no Among Us"
           :rules="[rules.required]"
           outlined
         ></v-text-field>
         <v-text-field
           v-model="gameCode"
-          label="Game Code"
+          label="Código da Sala"
           :rules="[rules.required, rules.counter6]"
           counter="6"
           maxlength="6"
@@ -22,14 +22,14 @@
           item-text="backendName"
           item-value="backendType"
           :rules="[rules.required]"
-          label="Server Backend"
+          label="Backend do Servidor"
           required
           outlined
         ></v-select>
         <v-text-field
           v-if="backendType === 2 || backendType === 4"
           v-model="ip"
-          label="Domain name (example.com) or IP Address of the server"
+          label="Nome do domínio (exemplo.com) ou o endereço IP do servidor"
           :rules="[rules.required]"
           outlined
         ></v-text-field>
@@ -39,7 +39,7 @@
           :items="regions"
           item-text="regionName"
           item-value="regionType"
-          label="Public Lobby Region"
+          label="Região pública do Servidor"
           :rules="[rules.publicLobbyRegion]"
           required
           outlined
@@ -50,7 +50,7 @@
           class="mr-4"
           type="submit"
         >
-          Join
+          Entrar
         </v-btn>
         <v-btn
           :disabled="!valid"
@@ -58,14 +58,14 @@
           class="mr-4"
           @click="copyShareSlug"
         >
-          Share URL
+          Compartilhar URL
         </v-btn>
         <input :value="shareSlug" id="slug-share">
       </v-form>
     </v-card>
     <JoinModal :game-code="gameCode" @joinroom="joinRoom($event)"/>
     <v-snackbar v-model="showSnackbar">
-      Copied URL to clipboard!
+      URL copiada com sucesso!
     </v-snackbar>
   </div>
 </template>
@@ -97,15 +97,15 @@ export default class ServerConnector extends Vue {
   backendType: BackendType = BackendType[this.$route.params.backend || 'PublicLobby'] || BackendType.PublicLobby;
   items = [
     {
-      backendName: 'Official Among Us Servers',
+      backendName: 'Servidores oficiais do Among Us',
       backendType: BackendType.PublicLobby
     },
     {
-      backendName: 'Impostor Private Server',
+      backendName: 'Servidor privado do Imposter',
       backendType: BackendType.Impostor
     },
     {
-      backendName: 'NodePolus Private Server',
+      backendName: 'Servidor privado do NodePolus',
       backendType: BackendType.NodePolus
     },
     {
@@ -144,10 +144,10 @@ export default class ServerConnector extends Vue {
 
   rules = {
     required (value: string) {
-      return !!value || 'Required.'
+      return !!value || 'Obrigatório'
     },
     counter6 (value: string) {
-      return value.length === 6 || 'Max 6 characters'
+      return value.length === 6 || 'Máximo 6 caractéres'
     },
     publicLobbyRegion (value: PublicLobbyRegion) {
       return Object.values(PublicLobbyRegion).includes(value)
