@@ -12,7 +12,7 @@
           v-bind="attrs"
           v-on="on"
           v-model="$store.state.options.falloff"
-          :readonly="$store.state.host !== $store.state.me.name"
+          :readonly="$store.state.host !== $store.state.me.uuid"
           :disabled="$store.state.options.falloffVision || !$store.state.joinedRoom"
           @change="updateOptions"
         >
@@ -25,7 +25,7 @@
               min="2.5"
               max="10"
               step="0.1"
-              :readonly="$store.state.host !== $store.state.me.name"
+              :readonly="$store.state.host !== $store.state.me.uuid"
               :disabled="$store.state.options.falloffVision || !$store.state.joinedRoom"
               @change="updateOptions"
             ></v-text-field>
@@ -34,21 +34,21 @@
         <v-checkbox
           label="Ouvir pessoas apenas na sua visão"
           v-model="$store.state.options.falloffVision"
-          :readonly="$store.state.host !== $store.state.me.name"
+          :readonly="$store.state.host !== $store.state.me.uuid"
           :disabled="!$store.state.joinedRoom"
           @change="updateOptions"
         ></v-checkbox>
         <v-checkbox
           label="Paredes bloqueam a voz"
           v-model="$store.state.options.colliders"
-          :readonly="$store.state.host !== $store.state.me.name"
+          :readonly="$store.state.host !== $store.state.me.uuid"
           :disabled="!$store.state.joinedRoom"
           @change="updateOptions"
         ></v-checkbox>
         <v-checkbox
           label="Ouvir pessoas nas câmeras"
           v-model="$store.state.options.paSystems"
-          :readonly="$store.state.host !== $store.state.me.name"
+          :readonly="$store.state.host !== $store.state.me.uuid"
           :disabled="!$store.state.joinedRoom"
           @change="updateOptions"
         ></v-checkbox>
@@ -56,7 +56,7 @@
     </v-card>
     <br>
     <v-card class="pa-5">
-      <h3>Opções Locais</h3>
+      <h3>Local options</h3>
       <v-form>
         <v-checkbox
           label="Ouvir todos como fantasma"
