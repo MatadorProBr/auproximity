@@ -3,7 +3,7 @@
     <div class="text-center py-5">
       <h3>Entre no servidor do Discord (somente em Inglês)</h3>
     </div>
-    <div class="pa-4 text-center">
+    <div class="pa-4 pb-7 text-center">
       <a class="discordbutton" :href="discordLink" target="_blank">
         <img src="@/assets/discordlogo.svg">
       </a>
