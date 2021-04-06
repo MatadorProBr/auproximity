@@ -1,7 +1,8 @@
 import util from "util";
 import dns from "dns";
-import fs from "fs";
 import chalk from "chalk";
+import path from "path";
+import child_process from "child_process";
 
 import { SkeldjsClient } from "@skeldjs/client";
 import * as text from "@skeldjs/text";
@@ -14,7 +15,8 @@ import {
     ColorID,
     TheSkeldVent,
     MiraHQVent,
-    PolusVent
+    PolusVent,
+    AirshipVent
 } from "@skeldjs/constant";
 
 import {
@@ -43,7 +45,6 @@ import { GameSettings } from "../types/models/ClientOptions";
 import { MatchmakerServers } from "../types/constants/MatchmakerServers";
 import { GameState } from "../types/enums/GameState";
 import { GameFlag } from "../types/enums/GameFlags";
-import { execSync } from "child_process";
 
 const GAME_VERSION = "2021.3.25.0";
 
@@ -136,6 +137,9 @@ export default class PublicLobbyBackend extends BackendAdapter {
         const map = this.client.settings.map;
         const data = MapVentData[map][ventid];
 
+        if (!data)
+            return null;
+
         switch (map) {
             case MapID.TheSkeld:
                 return TheSkeldVent[data.id];
@@ -143,6 +147,8 @@ export default class PublicLobbyBackend extends BackendAdapter {
                 return MiraHQVent[data.id];
             case MapID.Polus:
                 return PolusVent[data.id];
+            case MapID.Airship:
+                return AirshipVent[data.id];
         }
 
         return null;
@@ -223,11 +229,17 @@ export default class PublicLobbyBackend extends BackendAdapter {
         this.log(LogMode.Info, "Replacing state with cached state.. (%i objects, %i netobjects, %i room components)", this.players_cache.size, this.components_cache.size, this.global_cache.length);
 
         for (const [ id, object ] of this.players_cache) {
+            if (!object)
+                continue;
+
             object.room = this.client;
             this.client.objects.set(id, object);
         }
         
         for (const  [ id, component ] of this.components_cache) {
+            if (!component)
+                continue;
+
             component.room = this.client;
             this.client.netobjects.set(id, component);
         }
@@ -236,7 +248,7 @@ export default class PublicLobbyBackend extends BackendAdapter {
             const component = this.global_cache[i];
 
             if (!component)
-                return;
+                continue;
 
             component.room = this.client;
             this.client.components[i] = component;
@@ -279,6 +291,64 @@ export default class PublicLobbyBackend extends BackendAdapter {
         return regions[region];
     }
 
+    getAuthToken(): Promise<number> {
+        return new Promise((resolve, reject) => {
+            const ver = process.platform === "win32" ? "win-x64" : "linux-x64";
+            const tokenRegExp = /TOKEN:(\d+):TOKEN/;
+            
+            const pathToGetAuthToken = path.resolve(process.cwd(), "./GetAuthToken/hazeltest/GetAuthToken/bin/Release/net50/" + ver + "/GetAuthToken");
+            
+            const args = [
+                path.resolve(process.cwd(), "./PubsCert.pem"),
+                this.master[this.server][0]
+            ];
+            
+            const proc = child_process.spawn(pathToGetAuthToken, args);
+
+            proc.stdout.on("data", chunk => {
+                const out = chunk.toString("utf8");
+
+                if (tokenRegExp.test(out)) {
+                    const foundToken = tokenRegExp.exec(out.toString("utf8"))[1];
+            
+                    const authToken = parseInt(foundToken);
+                    proc.kill();
+                    resolve(authToken);
+                }
+            });
+        
+            proc.on("error", err => {
+                proc.kill();
+                reject(err);
+            });
+
+            // eslint-disable-next-line promise/catch-or-return, promise/always-return
+            sleep(5000).then(() => {
+                proc.kill();
+                reject(new Error("GetAuthToken took too long to get a token."));
+            });
+        });
+    }
+
+    async tryGetAuthToken(cur_attempt = 0): Promise<number> {
+        try {
+            return await this.getAuthToken();
+        } catch (e) {
+            cur_attempt++;
+            const remaining = 5 - cur_attempt;
+            
+            this.log(LogMode.Error, "Failed to get authorisation token, trying " + remaining + " more times. " + (e?.message?.toString() || e));
+
+            if (remaining) {
+                this.emitError("Failed to authorize with among us servers, trying " + remaining + " more times.", false);
+                return await this.tryGetAuthToken(cur_attempt);
+            } else {
+                await this.destroy();
+                return null;
+            }
+        }
+    }
+
     async initialize(): Promise<void> {
         this.destroyed = false;
 
@@ -290,34 +360,23 @@ export default class PublicLobbyBackend extends BackendAdapter {
 
             this.server = ~~(Math.random() * this.master.length);
 
-            // TODO: Implement actual getting-auth-token.
+            // TODO: Implement actual getting-auth-token (probably in skeldjs).
             // Currently the GetAuthToken program is closed source to avoid cheating.
             // This means that the PublicLobbyBackend will not work for those looking to self-host.
             // You can still however use the Impostor backend, although it requires setting up an impostor private server.
             // See https://github.com/auproximity/Impostor for the fork of Impostor required.
             // See https://github.com/auproximity/AUP-Impostor for the plugin.
-            
-            if (!fs.existsSync("getAuthToken.js")) {
-                const err = `
-Currently the GetAuthToken program is closed source to prevent it being used for cheating.
-Once a proper solution is in-place to get an authorisation token to connect, it will become open source and available for everyone.
-For now however, the PublicLobbyBackend will not work for those looking to self-host.
-You can still however use the Impostor backend, although it requires setting up an impostor private server.
-See https://github.com/auproximity/Impostor for the fork of Impostor required.
-See https://github.com/auproximity/AUP-Impostor for the plugin.
 
-Keep up to date with updates at https://github.com/skeldjs/SkeldJS
-                `.trim();
+            this.log(LogMode.Info, "Getting authorisation token from server..");
+            this.authToken = await this.tryGetAuthToken();
 
-                this.emitError("PublicLobbyBackend not implemented, see console for more information.", true);
-                this.log(LogMode.Error, err);
+            if (!this.authToken) {
+                this.emitError("Could not get authorization token, ask an admin to check the logs for more information.", true);
+                this.log(LogMode.Fatal, "Failed to get auth token.");
                 return await this.destroy();
             }
 
-            this.log(LogMode.Info, "Getting authorisation token from server..");
-
-            const authTokenString = execSync("node getAuthToken.js " + this.master[this.server][0]);
-            this.authToken = parseInt(authTokenString.toString("utf8"));
+            this.log(LogMode.Success, "Successfully got authorization token from the server.");
 
             if (!await this.doJoin())
                 return;
