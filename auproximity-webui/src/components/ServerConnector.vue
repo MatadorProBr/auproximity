@@ -101,11 +101,11 @@ export default class ServerConnector extends Vue {
       backendType: BackendType.PublicLobby
     },
     {
-      backendName: 'Servidor privado do Imposter',
+      backendName: 'Servidor privado (Imposter)',
       backendType: BackendType.Impostor
     },
     {
-      backendName: 'Servidor privado do NodePolus',
+      backendName: 'Servidor privado (NodePolus)',
       backendType: BackendType.NodePolus
     },
     {
