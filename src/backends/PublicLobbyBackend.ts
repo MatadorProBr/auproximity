@@ -91,6 +91,7 @@ export enum ConnectionErrorCode {
     NoClient,
     FailedToConnect,
     TimedOut,
+    GameNotFound,
     FailedToJoin
 }
 
@@ -160,7 +161,7 @@ export default class PublicLobbyBackend extends BackendAdapter {
 
         if (attempt >= max_attempts) {
             this.log(LogMode.Fatal, "Couldn't join game.");
-            this.emitError("Couldn't join the game, make sure that the game hasn't started and there is a spot for the client.", true);
+            this.emitError("Couldn't join the game after " + max_attempts + " attempts, make sure that the game hasn't started and there is a spot for the client.", true);
             return false;
         }
         
@@ -170,14 +171,21 @@ export default class PublicLobbyBackend extends BackendAdapter {
 
         if (!this.players_cache || !this.components_cache || !this.global_cache) {
             const err = await this.initialSpawn(attempt >= max_attempts);
+
+            if (err === ConnectionErrorCode.GameNotFound) {
+                this.log(LogMode.Fatal, "Couldn't find game.");
+                this.emitError("Não foi possível entrar no jogo, certifique-se de que a partida não tenha iniciado e que haja uma vaga para o cliente e você está usando a região correta.", true);
+                return false;
+            }
+
+            if (err === ConnectionErrorCode.FailedToJoin) {
+                this.log(LogMode.Fatal, "Couldn't join game.");
+                this.emitError("Não foi possível entrar no jogo, certifique-se de que a partida não tenha iniciado e que haja uma vaga para o cliente.", true);
+                return false;
+            }
+
             if (err !== ConnectionErrorCode.None) {
                 if (err !== ConnectionErrorCode.NoClient) {
-                    if (err === ConnectionErrorCode.FailedToJoin) {
-                        this.log(LogMode.Fatal, "Couldn't join game.");
-                        this.emitError("Não foi possível entrar no jogo, certifique-se de que a partida não tenha iniciado e que haja uma vaga para o cliente.", true);
-                        return false;
-                    }
-
                     await this.client.disconnect();
                 }
                 
@@ -220,6 +228,11 @@ export default class PublicLobbyBackend extends BackendAdapter {
         } catch (e) {
             const err = e as Error;
             attempt++;
+
+            if (err.message.includes("Could not find the game you're looking for.")) {
+                this.log(LogMode.Fatal, e.toString());
+                return false;
+            }
 
             this.log(LogMode.Warn, "Failed to join game (" + err.message + "), Retrying " + (max_attempts - attempt) + " more times.");
             this.emitError(err.message + ". Retrying " + (max_attempts - attempt) + " more times.", false);
@@ -355,9 +368,21 @@ export default class PublicLobbyBackend extends BackendAdapter {
         try {
             this.log(LogMode.Info, "PublicLobbyBackend initialized in region " + this.backendModel.region);
 
-            const dns = MatchmakerServers[this.backendModel.region];
-            this.master = await this.resolveMMDNS(this.backendModel.region, dns);
+            if (this.backendModel.region === "AS")
+                return this.emitError("Os servidores da Ásia não estão funcionando no momento, tente outra região.", true);
 
+            const dns = MatchmakerServers[this.backendModel.region];
+
+            if (!dns) {
+                return this.emitError("Couldn't resolve IP for the Among Us matchmaking services, invalid region '" + this.backendModel.region + "'.", true);
+            }
+
+            try {
+                this.master = await this.resolveMMDNS(this.backendModel.region, dns);
+            } catch (e) {
+                this.log(LogMode.Error, e);
+                return this.emitError("Não foi possível resolver o IP para os serviços de matchmaking do Among Us, peça a um administrador para verificar os logs para obter mais informações.", true);
+            }
             this.server = ~~(Math.random() * this.master.length);
 
             // TODO: Implement actual getting-auth-token (probably in skeldjs).
@@ -371,9 +396,8 @@ export default class PublicLobbyBackend extends BackendAdapter {
             this.authToken = await this.tryGetAuthToken();
 
             if (!this.authToken) {
-                this.emitError("Could not get authorization token, ask an admin to check the logs for more information.", true);
                 this.log(LogMode.Fatal, "Failed to get auth token.");
-                return await this.destroy();
+                return this.emitError("Não foi possível obter o token de autorização, peça a um administrador para verificar os logs para obter mais informações.", true);
             }
 
             this.log(LogMode.Success, "Successfully got authorization token from the server.");
@@ -435,13 +459,13 @@ export default class PublicLobbyBackend extends BackendAdapter {
 
                 if (host.id === this.client.clientid) {
                     if (this.client.players.size === 1) {
-                        this.log(LogMode.Warn, "Everyone left, disconnecting to remove the game.");
+                        this.log(LogMode.Info, "Everyone left, disconnecting to remove the game.");
                         await this.client.disconnect();
                         await this.destroy();
                         return;
                     }
 
-                    this.log(LogMode.Warn, "I became host, disconnecting and re-joining..");
+                    this.log(LogMode.Info, "I became host, disconnecting and re-joining..");
                     
                     await this.disconnect();
 
@@ -726,7 +750,11 @@ export default class PublicLobbyBackend extends BackendAdapter {
             }
         } catch (e) {
             this.log(LogMode.Fatal, e.toString());
-            if (isFinal) this.emitError("Couldn't join the game, make sure that the game hasn't started and there is a spot for the client.", true);
+            
+            if (e.toString().includes("Could not find the game")) {
+                return ConnectionErrorCode.GameNotFound;
+            }
+
             return ConnectionErrorCode.FailedToJoin;
         }
 
@@ -781,7 +809,7 @@ export default class PublicLobbyBackend extends BackendAdapter {
         }
 
         const formatted = tb(text.bold(), text.color("blue"), text.align(text.Align.Center))
-            .text("AUProximity is ready.");
+            .text("AUProximity está pronto para ser usado.");
 
         await this.client.me.control.checkName("ㆍ");
         await this.client.me.control.checkColor(ColorID.Blue);
