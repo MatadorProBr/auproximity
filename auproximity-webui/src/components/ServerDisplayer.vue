@@ -484,7 +484,7 @@ export default class ServerDisplayer extends Vue {
 
   get title () {
     if (this.$store.state.joinedRoom) {
-      return `Conectado ao jogo: ${this.$store.state.backendModel.gameCode}`
+      return `Conectado a sala: ${this.$store.state.backendModel.gameCode}`
     } else {
       return 'Não conectado'
     }
