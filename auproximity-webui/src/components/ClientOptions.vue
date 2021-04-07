@@ -56,7 +56,7 @@
     </v-card>
     <br>
     <v-card class="pa-5">
-      <h3>Local options</h3>
+      <h3>Opções Locais</h3>
       <v-form>
         <v-checkbox
           label="Ouvir todos como fantasma"

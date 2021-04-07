@@ -27,7 +27,7 @@
     <br>
     <div class="text-center">
       <h2>{{ title }}</h2>
-      <h4 v-if="$store.state.joinedRoom">Current Map: {{ ["The Skeld", "Mira HQ", "Polus", "The Skeld", "Airship"][this.settings.map] }}</h4>
+      <h4 v-if="$store.state.joinedRoom">Mapa selecionado: {{ ["The Skeld", "Mira HQ", "Polus", "The Skeld", "Airship"][this.settings.map] }}</h4>
     </div>
     <v-list v-if="$store.state.joinedRoom">
       <MyClientListItem :client="$store.state.me" :mic="mymic" />
@@ -484,9 +484,9 @@ export default class ServerDisplayer extends Vue {
 
   get title () {
     if (this.$store.state.joinedRoom) {
-      return `Connected to game: ${this.$store.state.backendModel.gameCode}`
+      return `Conectado ao jogo: ${this.$store.state.backendModel.gameCode}`
     } else {
-      return 'Not connected'
+      return 'Não conectado'
     }
   }
 

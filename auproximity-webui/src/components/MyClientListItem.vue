@@ -15,10 +15,10 @@
             </span>
           </span>
           <span class="float-right" v-if="mic.volumeNode !== undefined">
-            <span class="px-3">Conectado</span>
+            <span class="px-3">Connected</span>
           </span>
           <span class="float-right" v-else>
-            <span class="px-3">Desconectado</span>
+            <span class="px-3">Disconnected</span>
           </span>
         </v-list-item-title>
       </v-list-item-content>
